@@ -1,0 +1,151 @@
+﻿@page "/employees"
+
+@inject EmployeeViewModel EmployeeVM
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<style>
+    .header-class {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 200px);
+    text-align: center;
+    }
+</style>
+
+<MudCard Class="mt-2">
+    <MudCardHeader Class="header-class">
+        <MudText Typo="Typo.h6">Employees</MudText>
+        <IconButton OnClick="OpenNewEmployeeDialog" Icon="@Icons.Material.Filled.Add">New Employee</IconButton>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (!IsEmployeesLoaded)
+        {
+            <MudContainer Class="loading-container">
+                <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center" >
+                    <MudItem>
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2 mt-2" Typo="Typo.subtitle1">Loading Employees...</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+        else
+        {
+            <MudTable Items="EmployeeVM.Employees" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
+                <HeaderContent>
+                    <MudTh>Employee ID</MudTh>
+                    <MudTh>First Name</MudTh>
+                    <MudTh>Last Name</MudTh>
+                    <MudTh>Date of Birth</MudTh>
+                    <MudTh>NIC</MudTh>
+                    <MudTh>Passport No</MudTh>
+                    <MudTh>Phone Number</MudTh>
+                    <MudTh>Years of Experience</MudTh>
+                    <MudTh>O/L Qualified</MudTh>
+                    <MudTh>A/L Qualified</MudTh>
+                    <MudTh Style="text-align:right">Actions</MudTh>
+                </HeaderContent>
+
+                <RowTemplate>
+                    <MudTd>@context.EmployeeId</MudTd>
+                    <MudTd>@context.EmployeeFirstName</MudTd>
+                    <MudTd>@context.EmployeeLastName</MudTd>
+                    <MudTd>@context.EmployeeDOB.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd>@context.EmployeeNIC</MudTd>
+                    <MudTd>@(string.IsNullOrEmpty(context.EmployeePassportNO) ? "N/A" : context.EmployeePassportNO)</MudTd>
+                    <MudTd>@context.EmployeePhoneNumber</MudTd>
+                    <MudTd Style="text-align:right">@context.EmployeeYearOfExpYears</MudTd>
+                    <MudTd>@(context.EmployeeOLQualified ? "Yes" : "No")</MudTd>
+                    <MudTd>@(context.EmployeeALQualified ? "Yes" : "No")</MudTd>
+                    <MudTd Style="text-align:right">
+                        <!-- Edit Button -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => EditEmployee(context)" />
+                        <!-- Delete Button -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteEmployee(context)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private bool IsEmployeesLoaded { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsEmployeesLoaded = false;
+        StateHasChanged(); // Refresh UI
+
+        await EmployeeVM.LoadEmployees();
+
+        await Task.Delay(500);
+        IsEmployeesLoaded = true;
+        StateHasChanged(); // Refresh UI
+    }
+
+    private async Task OpenNewEmployeeDialog()
+    {
+        var options = new DialogOptions { CloseButton = true, CloseOnEscapeKey = true };
+        var dialog = DialogService.Show<NewEmployeeDialog>("Add New Employee", options);
+
+        var result = await dialog.Result; // Await the result properly
+
+        if (result.Canceled == false) // If dialog was not canceled
+        {
+            await EmployeeVM.LoadEmployees();
+        }
+    }
+
+    private async Task EditEmployee(Employee employee)
+    {
+        var parameters = new DialogParameters<NewEmployeeDialog>
+        {
+            { x => x.Title, "Update Employee Details" },
+            { x => x.IsEdit, true },
+            { x => x.EditEmployee, employee },
+        };
+
+        var options = new DialogOptions { CloseButton = true, CloseOnEscapeKey = true };
+
+        var dialog = DialogService.Show<NewEmployeeDialog>("Update Employee", parameters, options);
+        var result = await dialog.Result;
+
+        if (result.Canceled == false)
+        {
+            IsEmployeesLoaded = false;
+            StateHasChanged(); // Refresh UI
+
+            await EmployeeVM.LoadEmployees();
+
+            IsEmployeesLoaded = true;
+            StateHasChanged(); // Refresh UI
+        }
+    }
+
+    private async Task DeleteEmployee(Employee employee)
+    {
+        // var confirmed = await DialogService.ShowMessageBox(
+        //     "Confirm Delete",
+        //     $"Are you sure you want to delete {product.ProductName}?",
+        //     yesText: "Delete",
+        //     noText: "Cancel",
+        //     options: new DialogOptions { CloseButton = true });
+
+        // if ((bool)confirmed)
+        // {
+        //     await InventoryVM.DeleteProduct(product);
+        //     Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
+        //     await InventoryVM.LoadProducts();
+        // }
+    }
+}

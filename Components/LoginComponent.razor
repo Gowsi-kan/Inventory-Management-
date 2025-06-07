@@ -1,0 +1,93 @@
+﻿@inject NavigationManager Navigation
+@inject LoginViewModel LoginVM
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="login-container">
+    <MudPaper Class="login-box" Elevation="3">
+        <MudText Typo="Typo.h5" Class="text-center mb-4">Login</MudText>
+
+        <MudForm Model="_loginModel" @bind-IsValid="@_isValid" @ref="form" style="margin-top: 40px;">
+            <MudTextField T="string" Label="Username" Variant="Variant.Outlined" Adornment="Adornment.Start" 
+            AdornmentIcon="@Icons.Material.Filled.Person" IconSize="Size.Small" Margin="Margin.Dense"
+            @bind-Value="_loginModel.Username" Required="true" RequiredError="Username is required."/>
+
+            <MudTextField T="string" Label="Password" Variant="Variant.Outlined" Adornment="Adornment.Start" 
+            AdornmentIcon="@Icons.Material.Filled.Lock" InputType="InputType.Password" IconSize="Size.Small" 
+            Margin="Margin.Dense" @bind-Value="_loginModel.Password" Required="true" RequiredError="Password is required."/>
+
+            <MudButton Color="Color.Primary" FullWidth Class="mt-5 mb-4" OnClick="HandleLogin" Disabled="!_isValid" Variant="Variant.Filled">
+                @if (_loading)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" Color="Color.Inherit" />
+                    <MudText Class="ms-2">Logging In...</MudText>
+                }
+                else
+                {
+                    <MudText>Login</MudText>
+                }
+            </MudButton>
+        </MudForm>
+    </MudPaper>
+</MudContainer>
+
+<style>
+    .login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    }
+
+    .login-box {
+    padding: 2rem;
+    border-radius: 12px;
+    text-align: center;
+    width: 100%;
+    max-width: 300px;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public EventCallback OnLoginSuccess { get; set; }
+
+    private MudForm form;
+
+    private LoginModel _loginModel = new();
+    private bool _loading = false;
+    private bool _isValid = false;
+    private bool loginFailed = false;
+
+    private async Task HandleLogin()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        await form.Validate(); // Ensure form is initialized before validation
+
+        if (_isValid)
+        {
+            var isSuccess = await LoginVM.LoginUser(_loginModel);
+
+            await Task.Delay(2000);
+
+            if (isSuccess)
+            {
+                loginFailed = false;
+                await OnLoginSuccess.InvokeAsync(); // Notify parent
+            } else
+            {
+                loginFailed = true;
+                _loginModel = new();
+            }
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    public class LoginModel
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+}

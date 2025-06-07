@@ -1,0 +1,111 @@
+﻿@using InventoryManagement.Pages
+@using System.Reactive.Linq;
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject IBlobCache Cache
+
+<MudThemeProvider Theme="MyCustomTheme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    @if (IsLoggedIn)
+    {
+        <MudAppBar Elevation="0" Color="Color.Info">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+            <MudText Typo="Typo.subtitle1" Color="Color.Primary">@FormatPageTitle()</MudText>
+            <MudSpacer />
+            <RealTimeClock />
+            <MudIconButton Icon="@Icons.Material.Filled.Person" Color="Color.Primary" />
+            <MudText Typo="Typo.subtitle1" Color="Color.Primary" Class="mr-6">@UserName</MudText>
+            <MudButton StartIcon="@Icons.Material.Filled.Logout" Size="Size.Small" Color="Color.Primary" Variant="Variant.Filled" OnClick="Logout" style="padding-left: 16px; padding-right: 16px;">Sign Out</MudButton>
+        </MudAppBar>
+        <MudDrawer @bind-Open="@_drawerOpen">
+            <MyNavMenu/>
+        </MudDrawer>
+        <MudMainContent Class="px-3">
+            @Body
+        </MudMainContent>
+    } else
+    {
+        <LoginComponent OnLoginSuccess="@HandleLoginSuccess"/>
+    }
+
+</MudLayout>
+@code {
+    bool _drawerOpen = true;
+    private bool IsLoggedIn { get; set; } = false;
+    private string UserName { get; set; } = "Unknown";
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            UserName = await Cache.GetObject<string>("UserName").FirstOrDefaultAsync();
+            IsLoggedIn = !string.IsNullOrEmpty(UserName);
+        }
+        catch (KeyNotFoundException)
+        {
+            UserName = string.Empty;
+            IsLoggedIn = false;
+        }
+    }
+
+    private async Task HandleLoginSuccess()
+    {
+        UserName = await Cache.GetObject<string>("UserName").FirstOrDefaultAsync();
+        IsLoggedIn = true;
+        StateHasChanged(); // Force UI to refresh
+    }
+
+    private void Logout()
+    {
+        Cache.InvalidateObject<string>("UserName");
+        IsLoggedIn = false;
+    }
+
+    MudTheme MyCustomTheme = new MudTheme()
+        {
+            PaletteLight = new PaletteLight()
+            {
+                Primary = "#27272a", // Tailwind blue-500
+                Secondary = "#6b7280", // Tailwind purple-600
+                Tertiary = "#FACC15", // Tailwind yellow-400
+                Error = "#EF4444", // Tailwind red-500
+                Info = "#f9fafb", // Tailwind cyan-500
+                Success = "#10B981", // Tailwind emerald-500
+                Warning = "#F59E0B", // Tailwind amber-500
+            },
+            PaletteDark = new PaletteDark()
+            {
+                Primary = "#3B82F6",
+                Secondary = "#9333EA",
+                Tertiary = "#FACC15",
+                Error = "#EF4444",
+                Info = "#0EA5E9",
+                Success = "#10B981",
+                Warning = "#F59E0B",
+            }
+        };
+
+    string FormatPageTitle()
+    {
+        var uri = Navigation.Uri.TrimEnd('/'); // Remove trailing slash if any
+
+        // If the URI is exactly "/", return "Dashboard"
+        if (uri == Navigation.BaseUri.TrimEnd('/'))
+            return "Dashboard";
+
+        var segments = uri.Split('/'); // Split URL into parts
+        var lastSegment = segments.LastOrDefault(); // Get last part
+
+        return char.ToUpper(lastSegment[0]) + lastSegment.Substring(1); // Capitalize first letter
+    }
+}
+

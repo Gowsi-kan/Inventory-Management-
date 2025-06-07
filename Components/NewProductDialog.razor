@@ -1,0 +1,121 @@
+﻿@inject InventoryViewModel InventoryVM
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>@Title</TitleContent>
+    <DialogContent>
+        <MudForm Model="NewProduct" @bind-IsValid="@success" @ref="form">
+            <MudTextField T="string" Label="Product Name" @bind-Value="NewProduct.ProductName" Required="true" />
+            <MudSelect T="string" Label="Product Type" @bind-Value="NewProduct.ProductType" Required="true" Class="mt-2">
+                <MudSelectItem Value="@("Mass")">Mass</MudSelectItem>
+                <MudSelectItem Value="@("Liquid")">Liquid</MudSelectItem>
+                <MudSelectItem Value="@("Number")">Number</MudSelectItem>
+            </MudSelect>
+            <MudSelect T="string" Label="Product Unit" @bind-Value="NewProduct.ProductUnit" Required="true" Class="mt-2">
+                <MudSelectItem Value="@("Kg")">Kg</MudSelectItem>
+                <MudSelectItem Value="@("g")">g</MudSelectItem>
+                <MudSelectItem Value="@("L")">L</MudSelectItem>
+                <MudSelectItem Value="@("ml")">ml</MudSelectItem>
+            </MudSelect>
+            <MudTextField T="float" Label="Quantity" @bind-Value="NewProduct.ProductQuantity" Type="number" Required="true" Class="mt-2" />
+            <MudTextField T="float" Label="Price" @bind-Value="NewProduct.ProductPrice" Type="number" Required="true" Class="mt-2" />
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="CloseDialog" Variant="Variant.Filled">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Size="Size.Small" OnClick="SaveProduct" Disabled="!success" Variant="Variant.Filled">
+            @if (isLoading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving..</MudText>
+            } else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "New Product";
+
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    [Parameter]
+    public Product EditProduct { get; set; }
+
+    private Product NewProduct = new Product();
+    private bool success = false;
+    private MudForm form;
+    private bool isLoading = false;
+
+    protected override void OnInitialized()
+    {
+        if (IsEdit)
+        {
+            NewProduct = EditProduct;
+        }
+    }
+
+    private async Task SaveProduct()
+    {
+        if (form != null)
+        {
+            isLoading = true; // Show loading state
+            StateHasChanged(); // Refresh UI
+
+            await form.Validate(); // Ensure form is initialized before validation
+
+            if (success)
+            {
+                if (!IsEdit)
+                {
+                    var response = await InventoryVM.SaveProducts(NewProduct);
+                    ShowResponseClose(response);
+                } else
+                {
+                    var response = await InventoryVM.UpdateProduct(NewProduct);
+                    ShowResponseClose(response);
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine("Form is still null!");
+        }
+    }
+
+    private void CloseDialog()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async void ShowResponseClose(ResponseModel response)
+    {
+        // Add 3 seconds delay before stopping loading
+        await Task.Delay(2000);
+
+        isLoading = false; // Hide loading state
+        StateHasChanged(); // Refresh UI
+
+        if (response != null)
+        {
+            if (response.IsSuccess)
+            {
+                Snackbar.Add(response.Message, Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add(response.Message, Severity.Error);
+                return;
+            }
+        }
+    }
+}

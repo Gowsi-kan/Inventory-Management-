@@ -1,0 +1,11 @@
+﻿<MudButton Variant="Variant.Filled" OnClick="OnClick" StartIcon="@Icon" Color="Color.Primary" Size="Size">
+	@ChildContent
+</MudButton>
+
+
+@code {
+	[Parameter] public string Icon { get; set; }
+	[Parameter] public Size Size { get; set; } = Size.Small;
+	[Parameter] public EventCallback OnClick { get; set; }
+	[Parameter] public RenderFragment ChildContent { get; set; }
+}

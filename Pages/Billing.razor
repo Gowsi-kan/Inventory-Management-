@@ -1,0 +1,197 @@
+﻿@page "/billing"
+
+@inject InvoiceViewModel InvoiceVM
+@inject InventoryViewModel InventoryVM
+
+
+<style>
+	.billing-container {
+	margin: auto;
+	}
+
+	.billing-grid {
+	padding: 1rem;
+	}
+
+	.balance-negative {
+	color: red;
+	}
+
+	.btn-print {
+	width: 100%;
+	}
+
+	.receipt {
+	border-top: 1px solid #ddd;
+	padding-top: 10px;
+	}
+
+	.custom-between {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	}
+
+</style>
+
+<MudContainer Class="billing-container" MaxWidth="MaxWidth.ExtraExtraLarge">
+	<MudGrid Class="billing-grid">
+		<MudItem xs="12" md="9">
+
+			<MudGrid>
+				<MudItem xs="12">
+					<MudCard Elevation="1" Class="p-1">
+						<MudCardHeader>
+							<CardHeaderContent>
+								<MudText Typo="Typo.h6">Billing Form</MudText>
+							</CardHeaderContent>
+							<CardHeaderActions>
+								<MudIconButton Icon="@Icons.Material.Filled.AttachMoney" Disabled Color="Color.Default" />
+							</CardHeaderActions>
+						</MudCardHeader>
+
+						<MudCardContent>
+							<MudGrid Spacing="3" Justify="Justify.Center">
+								<MudItem xs="12" md="3">
+									<MudAutocomplete T="string"
+									SearchFunc="SearchProducts"
+									Label="Select Product ID"
+									Variant="Variant.Outlined"
+									Margin="Margin.Dense"
+									Dense="false"
+									Disabled="false"
+									ReadOnly="false"
+									HelperText="Search by Product ID"
+									HelperTextOnFocus="true"
+									ShrinkLabel
+									Clearable="true"
+									@bind-Value="InvoiceVM.SelectedProductID"
+									@bind-Value:event="OnProductSelected"
+									ValueChanged="OnProductSelected" />
+								</MudItem>
+								<MudItem xs="12" md="2">
+									<MudTextField ShrinkLabel Label="Product Name" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="InvoiceVM.ProductName" ReadOnly />
+								</MudItem>
+								<MudItem xs="12" md="2">
+									<MudNumericField ShrinkLabel Label="Quantity" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="InvoiceVM.Quantity" Min="1" />
+								</MudItem>
+								<MudItem xs="12" md="2">
+									<MudTextField ShrinkLabel Label="Price" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="InvoiceVM.Price" ReadOnly />
+								</MudItem>
+								<MudItem xs="12" md="2">
+									<MudTextField ShrinkLabel Label="Discount" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value="InvoiceVM.Discount" />
+								</MudItem>
+								<MudItem xs="12" md="1" Class="mt-2">
+									<MudButton Color="Color.Primary" Variant="Variant.Filled" FullWidth OnClick="InvoiceVM.AddProduct" StartIcon="@Icons.Material.Filled.Add">
+										Add
+									</MudButton>
+								</MudItem>
+							</MudGrid>
+						</MudCardContent>
+					</MudCard>
+				</MudItem>
+
+				<MudItem xs="12">
+					<MudTable Items="@InvoiceVM.Products" FixedHeader Height="calc(100vh - 320px)">
+						<HeaderContent>
+							<MudTh>Product ID</MudTh>
+							<MudTh>Product Name</MudTh>
+							<MudTh>Qty</MudTh>
+							<MudTh>Price</MudTh>
+							<MudTh>Total</MudTh>
+						</HeaderContent>
+						<RowTemplate Context="item">
+							<MudTd>@item.Id</MudTd>
+							<MudTd>@item.Name</MudTd>
+							<MudTd>@item.Quantity</MudTd>
+							<MudTd>@item.Price</MudTd>
+							<MudTd>@(item.subTotal)</MudTd>
+						</RowTemplate>
+					</MudTable>
+				</MudItem>
+			</MudGrid>
+
+		</MudItem>
+
+		<MudItem xs="12" md="3">
+			<MudCard Class="" Style="padding: 1rem; height: calc(100vh - 110px);" Elevation="1">
+				<div class="mb-3 custom-between">
+					<MudText Typo="Typo.h6">Subtotal</MudText>
+					<MudText Typo="Typo.h6">Rs @InvoiceVM.SubTotal</MudText>
+				</div>
+				<div class="mb-3 custom-between">
+					<MudText Typo="Typo.h6">Discount</MudText>
+					<MudText Typo="Typo.h6" Color="Color.Success">Rs @InvoiceVM.TotalDiscount</MudText>
+				</div>
+				<div class="mb-3 custom-between">
+					<MudText Typo="Typo.h6">Total</MudText>
+					<MudText Typo="Typo.h6">Rs @InvoiceVM.Total</MudText>
+				</div>
+				<div class="mb-3 custom-between">
+					<MudText Typo="Typo.h6">Pay</MudText>
+					<div>
+						<MudTextField style="max-width: 100px;" @bind-Value="InvoiceVM.PayAmount" Margin="Margin.Dense" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="Rs"/>
+					</div>
+				</div>
+				<div class="mb-3 custom-between">
+					<MudText Typo="Typo.h6">Balance</MudText>
+					<MudText Typo="Typo.h6" Color="Color.Error">Rs @InvoiceVM.Balance</MudText>
+				</div>
+				<MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-2"> 
+					<MudIcon Icon="@Icons.Material.Filled.Print" /> Print Bill
+				</MudButton>
+
+				@* <NumberPad OnNumberEntered="HandleNumberInput" />
+
+				<MudAlert Severity="MudBlazor.Severity.Info">@EnteredNumber</MudAlert> *@
+
+				@* <MudCard Class="mt-5 p-4" Style="background-color: #f4f4f5">
+					<h6 class="text-center fw-bold">Receipt Preview</h6>
+					<div class="d-flex justify-content-between">
+						<span>2x gfn</span>
+						<span>.08</span>
+					</div>
+					<hr>
+					<div class="d-flex justify-content-between fw-bold">
+						<span>TOTAL</span>
+						<span>.08</span>
+					</div>
+				</MudCard> *@
+
+			</MudCard>
+
+			
+		</MudItem>
+	</MudGrid>
+</MudContainer> 
+
+@code {
+	private async Task<IEnumerable<string>> SearchProducts(string value, CancellationToken token)
+	{
+		await InventoryVM.LoadProducts();
+
+		var productIds = InventoryVM.Products
+			.Where(p => !string.IsNullOrEmpty(p.ProductId)) // Ensure no null/empty values
+			.Select(p => p.ProductId)
+			.ToList();
+
+		if (string.IsNullOrWhiteSpace(value))
+			return productIds; // Return all if no search value
+
+		return productIds.Where(id => id.Contains(value, StringComparison.OrdinalIgnoreCase));
+	}
+
+	private async Task OnProductSelected(string selectedId)
+	{
+		await InvoiceVM.OnProductSelected(selectedId);
+		StateHasChanged(); // Refresh UI
+	}
+	
+	private string EnteredNumber = "";
+
+	private void HandleNumberInput(string number)
+	{
+		EnteredNumber = $"You entered: {number}";
+	}
+}
+

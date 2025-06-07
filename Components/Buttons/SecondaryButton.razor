@@ -1,0 +1,10 @@
+﻿<MudButton Color="Color.Secondary" Variant="Variant.Outlined" Size="Size"
+OnClick="OnClick">
+    @ChildContent
+</MudButton>
+
+@code {
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public Size Size { get; set; } = Size.Small;
+    [Parameter] public RenderFragment ChildContent { get; set; }
+}

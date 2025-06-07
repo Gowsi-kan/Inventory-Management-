@@ -1,0 +1,174 @@
+﻿@inject EmployeeViewModel EmployeeVM
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>@Title</TitleContent>
+    <DialogContent>
+        <MudForm Model="NewEmployee" @bind-IsValid="@success" @ref="form">
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" Label="First Name" @bind-Value="NewEmployee.EmployeeFirstName" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField T="string" Label="Last Name" @bind-Value="NewEmployee.EmployeeLastName" Required="true" />
+
+                </MudItem>
+            </MudGrid>
+            <MudTextField T="string" Label="NIC" @bind-Value="NewEmployee.EmployeeNIC" Required="true" />
+            <MudTextField T="string" Label="Passport No" @bind-Value="NewEmployee.EmployeePassportNO" />
+            <MudTextField T="string" Label="Phone Number" @bind-Value="NewEmployee.EmployeePhoneNumber" Required="true" />
+            <MudTextField T="int" Label="Years of Experience" @bind-Value="NewEmployee.EmployeeYearOfExpYears" Type="number" Required="true" />
+            <MudDatePicker T="DateTime" Label="Date of Birth" Editable="true" @bind-Date="_date" @bind-Value="NewEmployee.EmployeeDOB" Required="true" />
+
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="O/L Qualified" @bind-Value="NewEmployee.EmployeeOLQualified" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="A/L Qualified" @bind-Value="NewEmployee.EmployeeALQualified" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="Extra Qualification" @bind-Value="NewEmployee.EmployeeExtraQualification" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="Certificate of Experience Uploaded" @bind-Value="NewEmployee.EmployeeCertificateOfExpUploaded" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="O/L Certificate Uploaded" @bind-Value="NewEmployee.EmployeeCertificateOfOLUploaded" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="A/L Certificate Uploaded" @bind-Value="NewEmployee.EmployeeCertificateOfALUploaded" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="Extra Qualification Certificate Uploaded" @bind-Value="NewEmployee.EmployeeCertificateOfExtraQualificationUploaded" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="NIC Copy Uploaded" @bind-Value="NewEmployee.EmployeeNICCopyUploaded" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="Passport Copy Uploaded" @bind-Value="NewEmployee.EmployeePassportCopyUploaded" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudCheckBox T="bool" Label="Contract Form Uploaded" @bind-Value="NewEmployee.EmployeeContractFormUploaded" />
+                </MudItem>
+            </MudGrid>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Size="Size.Small" OnClick="CloseDialog" Variant="Variant.Filled">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Size="Size.Small" OnClick="SaveEmployee" Variant="Variant.Filled">
+            @if (isLoading)
+            {
+                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ms-2">Saving..</MudText>
+            }
+            else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "New Employee";
+
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    [Parameter]
+    public Employee EditEmployee { get; set; }
+
+    private Employee NewEmployee = new Employee();
+    private bool success = false;
+    private MudForm form;
+    private bool isLoading = false;
+
+    private DateTime? _date;
+
+    protected override void OnInitialized()
+    {
+        if (IsEdit)
+        {
+            NewEmployee = EditEmployee;
+            _date = EditEmployee.EmployeeDOB;
+        }
+    }
+
+    private async Task SaveEmployee()
+    {
+        if (form != null)
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            await form.Validate();
+
+            if (!form.IsValid)
+            {
+                isLoading = false;
+                return;
+            }
+
+            if (success)
+            {
+                if (!IsEdit)
+                {
+                    if (_date.HasValue)  // Check if _date has a value before using .Value
+                    {
+                        NewEmployee.EmployeeDOB = _date.Value;
+                    }
+                    if(NewEmployee.EmployeePassportNO == null)
+                        NewEmployee.EmployeePassportNO = "";
+                    var response = await EmployeeVM.SaveEmployee(NewEmployee);
+                    ShowResponseClose(response);
+                }
+                else
+                {
+                    if (_date.HasValue)  // Check if _date has a value before using .Value
+                    {
+                        NewEmployee.EmployeeDOB = _date.Value;
+                    }
+                    if (NewEmployee.EmployeePassportNO == null)
+                        NewEmployee.EmployeePassportNO = "";
+                    var response = await EmployeeVM.UpdateEmployee(NewEmployee);
+                    ShowResponseClose(response);
+                }
+            }
+        }
+    }
+
+    private async Task CloseDialog()
+    {
+        await EmployeeVM.LoadEmployees();
+        MudDialog.Cancel();
+    }
+
+    private async void ShowResponseClose(ResponseModel response)
+    {
+        await Task.Delay(500);
+
+        isLoading = false;
+        StateHasChanged();
+
+        if (response != null)
+        {
+            if (response.IsSuccess)
+            {
+                Snackbar.Add(response.Message, Severity.Success);
+                await EmployeeVM.LoadEmployees();
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add(response.Message, Severity.Error);
+                return;
+            }
+        }
+    }
+}

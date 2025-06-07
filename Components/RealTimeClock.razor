@@ -1,0 +1,26 @@
+﻿@inject RealTimerService RealTimeService
+
+<MudCard Elevation="0" Class="px-4" style="background-color: transparent;">
+    <MudStack Row>
+        <MudText Color="Color.Primary" Typo="Typo.subtitle1" Class="ml-4 mr-4">@RealTimeService.CurrentTime.ToString("dddd, dd MMMM yyyy")</MudText>
+        <MudText Color="Color.Primary" Typo="Typo.subtitle1" Class="ml-4 mr-4">@RealTimeService.CurrentTime.ToString("HH:mm:ss")</MudText>
+    </MudStack>
+</MudCard>
+
+
+@code {
+    protected override void OnInitialized()
+    {
+        RealTimeService.OnTimeChanged += UpdateTime;
+    }
+
+    private void UpdateTime()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        RealTimeService.OnTimeChanged -= UpdateTime;
+    }
+}

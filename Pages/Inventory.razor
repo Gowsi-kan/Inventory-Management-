@@ -1,0 +1,144 @@
+﻿@page "/inventory"
+
+@inject InventoryViewModel InventoryVM
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<style>
+    .header-class {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    }
+
+    .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: calc(100vh - 200px);
+    text-align: center;
+    }
+</style>
+
+<MudCard Class="mt-2">
+    <MudCardHeader Class="header-class">
+        <MudText Typo="Typo.h6">Products</MudText>
+        <IconButton OnClick="OpenNewProductDialog" Icon="@Icons.Material.Filled.Add">New Product</IconButton>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (!IsProductsLoaded)
+        {
+            <MudContainer Class="loading-container">
+                <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center" >
+                    <MudItem>
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2 mt-2" Typo="Typo.subtitle1">Loading Products...</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+        else
+        {
+            <MudTable Items="InventoryVM.Products" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
+                <HeaderContent>
+                    <MudTh>Product ID</MudTh>
+                    <MudTh>Product Name</MudTh>
+                    <MudTh>Type</MudTh>
+                    <MudTh Style="text-align:right">Unit</MudTh>
+                    <MudTh Style="text-align:right">Quantity</MudTh>
+                    <MudTh Style="text-align:right">Price</MudTh>
+                    <MudTh Style="text-align:right">Actions</MudTh> <!-- New Actions Column -->
+                </HeaderContent>
+
+                <RowTemplate>
+                    <MudTd>@context.ProductId</MudTd>
+                    <MudTd>@context.ProductName</MudTd>
+                    <MudTd>@context.ProductType</MudTd>
+                    <MudTd Style="text-align:right">@context.ProductUnit</MudTd>
+                    <MudTd Style="text-align:right">@context.ProductQuantity</MudTd>
+                    <MudTd Style="text-align:right">@context.ProductPrice.ToString("C")</MudTd>
+                    <MudTd Style="text-align:right">
+                        <!-- Edit Button -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => EditProduct(context)" />
+                        <!-- Delete Button -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteProduct(context)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private bool IsProductsLoaded { get; set; } = false; 
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsProductsLoaded = false;
+        StateHasChanged(); // Refresh UI
+
+        await InventoryVM.LoadProducts();
+
+        await Task.Delay(500);
+        IsProductsLoaded = true;
+        StateHasChanged(); // Refresh UI
+    }
+
+    private async Task OpenNewProductDialog()
+    {
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraExtraLarge, CloseOnEscapeKey = true };
+        var dialog = DialogService.Show<NewProductDialog>("Create New Product", options);
+
+        var result = await dialog.Result; // Await the result properly
+
+        if (result.Canceled == false) // If dialog was not canceled
+        {
+            await InventoryVM.LoadProducts();
+        }
+    }
+
+    private async Task EditProduct(Product product)
+    {
+        var parameters = new DialogParameters<NewProductDialog>
+        {
+            { x => x.Title, "Update Product" },
+            { x => x.IsEdit, true },
+            { x => x.EditProduct, product },
+        };
+
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.ExtraExtraLarge, CloseOnEscapeKey = true };
+
+        var dialog = DialogService.Show<NewProductDialog>("Update Product", parameters, options);
+        var result = await dialog.Result;
+
+        if (result.Canceled == false)
+        {
+            IsProductsLoaded = false;
+            StateHasChanged(); // Refresh UI
+
+            await InventoryVM.LoadProducts();
+
+            IsProductsLoaded = true;
+            StateHasChanged(); // Refresh UI
+        }
+    }
+
+    private async Task DeleteProduct(Product product)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete {product.ProductName}?",
+            yesText: "Delete",
+            noText: "Cancel",
+            options: new DialogOptions { CloseButton = true });
+
+        if ((bool)confirmed)
+        {
+            await InventoryVM.DeleteProduct(product);
+            Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
+            await InventoryVM.LoadProducts();
+        }
+    }
+}
+
