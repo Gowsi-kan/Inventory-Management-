@@ -4,6 +4,7 @@ using InventoryManagement.ViewModels;
 using Microsoft.Extensions.Logging;
 using MudBlazor;
 using MudBlazor.Services;
+using QuestPDF.Infrastructure;
 
 namespace InventoryManagement
 {
@@ -12,6 +13,10 @@ namespace InventoryManagement
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
+
+            // Set license
+            QuestPDF.Settings.License = LicenseType.Community;
+
             builder
                 .UseMauiApp<App>()
                 .ConfigureFonts(fonts =>

@@ -1,0 +1,15 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.subtitle1">@ContentText</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Class="mb-3" OnClick="@(() => MudDialog.Close(DialogResult.Ok("open")))" Color="Color.Success" Variant="Variant.Filled">Open Invoice</MudButton>
+        <MudButton Class="mb-3" OnClick="@(() => MudDialog.Cancel())" Color="Color.Error" Variant="Variant.Filled">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string ContentText { get; set; } = "Invoice saved.";
+    [Parameter] public string FilePath { get; set; } = string.Empty;
+}

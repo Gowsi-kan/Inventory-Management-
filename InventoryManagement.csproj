@@ -66,13 +66,24 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Remove="wwwroot\Icon_App.ico" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="akavache" Version="10.1.6" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="9.0.0" />
         <PackageReference Include="MudBlazor" Version="8.3.0" />
+        <PackageReference Include="QuestPDF" Version="2025.5.1" />
         <PackageReference Include="Serilog" Version="4.2.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Resource Include="wwwroot\Icon_App.ico">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Resource>
     </ItemGroup>
 
 </Project>
