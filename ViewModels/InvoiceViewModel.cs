@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using InventoryManagement.Services;
+using QuestPDF.Fluent;
 
 namespace InventoryManagement.ViewModels
 {
@@ -184,6 +185,35 @@ namespace InventoryManagement.ViewModels
                 Quantity = 1;  // Default quantity
                 Price = selectedProduct.ProductPrice; // Assuming InventoryVM.Products has Price
             }
+        }
+
+        public async Task<string> SaveInvoiceAsPdf()
+        {
+            //var document = new BillingDocument(this);
+
+            //string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "invoice.pdf");
+            //await Task.Run(() => document.GeneratePdf(filePath));
+
+            //try
+            //{
+            //    using var process = new System.Diagnostics.Process();
+            //    process.StartInfo = new System.Diagnostics.ProcessStartInfo(filePath)
+            //    {
+            //        UseShellExecute = true
+            //    };
+            //    process.Start();
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine("Failed to open PDF: " + ex.Message);
+            //}
+
+            var document = new BillingDocument(this);
+
+            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "invoice.pdf");
+            await Task.Run(() => document.GeneratePdf(filePath));
+
+            return filePath;
         }
     }
 

@@ -2,6 +2,7 @@
 
 @inject InvoiceViewModel InvoiceVM
 @inject InventoryViewModel InventoryVM
+@inject IDialogService DialogService
 
 
 <style>
@@ -137,35 +138,28 @@
 					<MudText Typo="Typo.h6">Balance</MudText>
 					<MudText Typo="Typo.h6" Color="Color.Error">Rs @InvoiceVM.Balance</MudText>
 				</div>
-				<MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-2"> 
-					<MudIcon Icon="@Icons.Material.Filled.Print" /> Print Bill
+				<MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-2" OnClick="PrintBill" Disabled="@IsProcessing"> 
+					@* <MudIcon Icon="@Icons.Material.Filled.Print" /> Print Bill *@
+					@if (IsProcessing)
+					{
+						<MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+						<span>Generating...</span>
+					}
+					else
+					{
+						<MudIcon Icon="@Icons.Material.Filled.Print"/>
+						<span class="ml-2">Print Invoice</span>	
+					}
 				</MudButton>
-
-				@* <NumberPad OnNumberEntered="HandleNumberInput" />
-
-				<MudAlert Severity="MudBlazor.Severity.Info">@EnteredNumber</MudAlert> *@
-
-				@* <MudCard Class="mt-5 p-4" Style="background-color: #f4f4f5">
-					<h6 class="text-center fw-bold">Receipt Preview</h6>
-					<div class="d-flex justify-content-between">
-						<span>2x gfn</span>
-						<span>.08</span>
-					</div>
-					<hr>
-					<div class="d-flex justify-content-between fw-bold">
-						<span>TOTAL</span>
-						<span>.08</span>
-					</div>
-				</MudCard> *@
-
 			</MudCard>
-
-			
 		</MudItem>
 	</MudGrid>
 </MudContainer> 
 
 @code {
+	private bool IsProcessing = false;
+	private string savedInvoicePath = string.Empty;
+
 	private async Task<IEnumerable<string>> SearchProducts(string value, CancellationToken token)
 	{
 		await InventoryVM.LoadProducts();
@@ -186,12 +180,56 @@
 		await InvoiceVM.OnProductSelected(selectedId);
 		StateHasChanged(); // Refresh UI
 	}
-	
-	private string EnteredNumber = "";
 
-	private void HandleNumberInput(string number)
+	private async Task PrintBill()
+    {
+        IsProcessing = true;
+		try
+		{
+			savedInvoicePath = await InvoiceVM.SaveInvoiceAsPdf(); // returns file path
+			await ShowInvoiceSavedDialog(); // show success dialog
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"PDF generation failed: {ex.Message}");
+			// optionally show error dialog
+		}
+		finally
+		{
+			IsProcessing = false;
+			StateHasChanged();
+		}
+    }
+
+	private async Task ShowInvoiceSavedDialog()
 	{
-		EnteredNumber = $"You entered: {number}";
+		var parameters = new DialogParameters
+		{
+			{ "ContentText", "Invoice saved successfully." },
+			{ "FilePath", savedInvoicePath }
+		};
+
+		var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+		var dialog = await DialogService.ShowAsync<InvoiceSavedDialog>("Success", parameters, options);
+		var result = await dialog.Result;
+
+		if (!result.Canceled && result.Data?.ToString() == "open")
+		{
+			try
+			{
+				var process = new System.Diagnostics.Process();
+				process.StartInfo = new System.Diagnostics.ProcessStartInfo(savedInvoicePath)
+				{
+					UseShellExecute = true
+				};
+				process.Start();
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("Failed to open PDF: " + ex.Message);
+			}
+		}
 	}
 }
 
