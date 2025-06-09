@@ -123,5 +123,23 @@ namespace InventoryManagement.Services
                 return new(false, $"Error updating employee: {ex.Message}");
             }
         }
+
+        public async Task<ResponseModel> RemoveEmployee(Employee employee)
+        {
+            if (employee == null) return new(false, "Employee is undefined");
+
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"{BaseUrl}/RemoveEmployeeById/{employee.EmployeeId}");
+
+                response.EnsureSuccessStatusCode();
+
+                return new(true, "Employee Remopved Successfully..");
+            }
+            catch (HttpRequestException ex)
+            {
+                return new(false, $"Error removing employee: {ex.Message}");
+            }
+        }
     }
 }

@@ -23,6 +23,7 @@ namespace InventoryManagement.ViewModels
                 OnPropertyChanged();
             }
         }
+
         public EmployeeViewModel(EmployeeService employeeService)
         {
             Employees = [];
@@ -43,6 +44,11 @@ namespace InventoryManagement.ViewModels
         public async Task<ResponseModel> UpdateEmployee(Employee employee)
         {
             return await _employeeService.UpdateEmployee(employee);
+        }
+
+        public async Task<ResponseModel> RemoveEmployee(Employee employee)
+        {
+            return await _employeeService.RemoveEmployee(employee);
         }
     }
 }

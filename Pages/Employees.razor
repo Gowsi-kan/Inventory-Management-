@@ -63,9 +63,9 @@
                     <MudTd>@context.EmployeeNIC</MudTd>
                     <MudTd>@(string.IsNullOrEmpty(context.EmployeePassportNO) ? "N/A" : context.EmployeePassportNO)</MudTd>
                     <MudTd>@context.EmployeePhoneNumber</MudTd>
-                    <MudTd Style="text-align:right">@context.EmployeeYearOfExpYears</MudTd>
-                    <MudTd>@(context.EmployeeOLQualified ? "Yes" : "No")</MudTd>
-                    <MudTd>@(context.EmployeeALQualified ? "Yes" : "No")</MudTd>
+                    <MudTd Style="text-align:center">@context.EmployeeYearOfExpYears</MudTd>
+                    <MudTd Style="text-align:center">@(context.EmployeeOLQualified ? "Yes" : "No")</MudTd>
+                    <MudTd Style="text-align:center">@(context.EmployeeALQualified ? "Yes" : "No")</MudTd>
                     <MudTd Style="text-align:right">
                         <!-- Edit Button -->
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => EditEmployee(context)" />
@@ -100,7 +100,7 @@
 
         var result = await dialog.Result; // Await the result properly
 
-        if (result.Canceled == false) // If dialog was not canceled
+        if (result?.Canceled == false) // If dialog was not canceled
         {
             await EmployeeVM.LoadEmployees();
         }
@@ -120,7 +120,7 @@
         var dialog = DialogService.Show<NewEmployeeDialog>("Update Employee", parameters, options);
         var result = await dialog.Result;
 
-        if (result.Canceled == false)
+        if (result?.Canceled == false)
         {
             IsEmployeesLoaded = false;
             StateHasChanged(); // Refresh UI
@@ -134,18 +134,18 @@
 
     private async Task DeleteEmployee(Employee employee)
     {
-        // var confirmed = await DialogService.ShowMessageBox(
-        //     "Confirm Delete",
-        //     $"Are you sure you want to delete {product.ProductName}?",
-        //     yesText: "Delete",
-        //     noText: "Cancel",
-        //     options: new DialogOptions { CloseButton = true });
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete {employee.EmployeeFirstName}?",
+            yesText: "Delete",
+            noText: "Cancel",
+            options: new DialogOptions { CloseButton = true });
 
-        // if ((bool)confirmed)
-        // {
-        //     await InventoryVM.DeleteProduct(product);
-        //     Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
-        //     await InventoryVM.LoadProducts();
-        // }
+        if ((bool)confirmed)
+        {
+            await EmployeeVM.RemoveEmployee(employee);
+            Snackbar.Add($"Employee: {employee.EmployeeFirstName} removed Successfully.", Severity.Success);
+            await EmployeeVM.LoadEmployees();
+        }
     }
 }
