@@ -1,7 +1,139 @@
 ﻿@page "/orders"
 
-<h3>Orders</h3>
+@inject OrdersViewModel OrderVM
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<style>
+    .header-class {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 200px);
+        text-align: center;
+    }
+</style>
+
+<MudCard Class="mt-2">
+    <MudCardHeader Class="header-class">
+        <MudText Typo="Typo.h6">Orders</MudText>
+        <IconButton OnClick="OpenNewOrderDialog" Icon="@Icons.Material.Filled.Add">New Order</IconButton>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (!IsOrdersLoaded)
+        {
+            <MudContainer Class="loading-container">
+                <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center">
+                    <MudItem>
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2 mt-2" Typo="Typo.subtitle1">Loading Orders...</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+        else
+        {
+            <MudTable Items="OrderVM.Orders" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
+                <HeaderContent>
+                    <MudTh>Company Name</MudTh>
+                    <MudTh>Phone Number</MudTh>
+                    <MudTh>Advance Payment</MudTh>
+                    <MudTh>Final Payment</MudTh>
+                    <MudTh>Rollback Payment</MudTh>
+                    <MudTh>Receive Status</MudTh>
+                    <MudTh>Order Date</MudTh>
+                    <MudTh>Received Date</MudTh>
+                    <MudTh>Payment Bill Uploaded</MudTh>
+                    <MudTh Style="text-align:right">Actions</MudTh>
+                </HeaderContent>
+
+                <RowTemplate>
+                    <MudTd>@context.CompanyName</MudTd>
+                    <MudTd>@context.CompanyPhoneNumber</MudTd>
+                    <MudTd>@context.OrderAdvancePayment</MudTd>
+                    <MudTd>@context.OrderFinalPayment</MudTd>
+                    <MudTd>@context.OrderRollbackPayment</MudTd>
+                    <MudTd>@context.OrderReceiveStatus</MudTd>
+                    <MudTd>@context.OrderDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd>@context.OrderReceivedDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd>@(context.PaymentBillUploaded ? "Yes" : "No")</MudTd>
+                    <MudTd Style="text-align:right">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => EditOrder(context)" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteOrder(context)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+        }
+    </MudCardContent>
+</MudCard>
 
 @code {
+    private bool IsOrdersLoaded { get; set; } = false;
 
+    protected override async Task OnInitializedAsync()
+    {
+        IsOrdersLoaded = false;
+        StateHasChanged(); // Refresh UI
+
+        await OrderVM.LoadOrders();
+
+        await Task.Delay(500);
+        IsOrdersLoaded = true;
+        StateHasChanged(); // Refresh UI
+    }
+
+    private async Task OpenNewOrderDialog()
+    {
+        var options = new DialogOptions { CloseButton = true, CloseOnEscapeKey = true };
+        var dialog = DialogService.Show<NewOrderDialog>("Add New Order", options);
+
+        var result = await dialog.Result; // Await the result properly
+
+        if (result.Canceled == false) // If dialog was not canceled
+        {
+            //await EmployeeVM.LoadEmployees();
+        }
+    }
+
+    private async Task EditOrder(Order order)
+    {
+        // var confirmed = await DialogService.ShowMessageBox(
+        //     "Confirm Delete",
+        //     $"Are you sure you want to delete {product.ProductName}?",
+        //     yesText: "Delete",
+        //     noText: "Cancel",
+        //     options: new DialogOptions { CloseButton = true });
+
+        // if ((bool)confirmed)
+        // {
+        //     await InventoryVM.DeleteProduct(product);
+        //     Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
+        //     await InventoryVM.LoadProducts();
+        // }
+    }
+
+    private async Task DeleteOrder(Order order)
+    {
+        // var confirmed = await DialogService.ShowMessageBox(
+        //     "Confirm Delete",
+        //     $"Are you sure you want to delete {product.ProductName}?",
+        //     yesText: "Delete",
+        //     noText: "Cancel",
+        //     options: new DialogOptions { CloseButton = true });
+
+        // if ((bool)confirmed)
+        // {
+        //     await InventoryVM.DeleteProduct(product);
+        //     Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
+        //     await InventoryVM.LoadProducts();
+        // }
+    }
 }
