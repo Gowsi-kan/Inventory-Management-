@@ -1,0 +1,218 @@
+﻿@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>Order Form</TitleContent>
+    <DialogContent>
+        <MudForm Model="NewOrder" @bind-IsValid="success" @ref="form">
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Company Name" @bind-Value="NewOrder.CompanyName" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Phone Number" @bind-Value="NewOrder.CompanyPhoneNumber" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Street Address" @bind-Value="NewOrder.CompanyAddressStreet" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="City" @bind-Value="NewOrder.CompanyAddressCity" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="District" @bind-Value="NewOrder.CompanyAddressDistrict" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Province" @bind-Value="NewOrder.CompanyAddressProvince" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Country" @bind-Value="NewOrder.CompanyAddressCountry" Required="true" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudSelect Label="Advance Payment Type" @bind-Value="NewOrder.OrderAdvancePaymentType" Required="true">
+                        <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+                        <MudSelectItem Value="@("Card")">Card</MudSelectItem>
+                        <MudSelectItem Value="@("Cheque")">Cheque</MudSelectItem>
+                        <MudSelectItem Value="@("Bank Transfer")">Bank Transfer</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Advance Payment" @bind-Value="NewOrder.OrderAdvancePayment" Type="number" Required/>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect Label="Final Payment Type" @bind-Value="NewOrder.OrderFinalPaymentType" Required="false">
+                        <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+                        <MudSelectItem Value="@("Card")">Card</MudSelectItem>
+                        <MudSelectItem Value="@("Cheque")">Cheque</MudSelectItem>
+                        <MudSelectItem Value="@("Bank Transfer")">Bank Transfer</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Final Payment" @bind-Value="NewOrder.OrderFinalPayment" Type="number" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            <MudSelect Label="Receive Status" @bind-Value="NewOrder.OrderReceiveStatus" Required>
+                @foreach (var status in OrderReceiveStatusOptions)
+                {
+                    <MudSelectItem Value="@status.ToString()">@EnumHelper.GetDisplayName(status)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudCheckBox Label="Payment Rollbacked" @bind-Value="NewOrder.OrderPaymentRollbacked" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Rollback Payment" @bind-Value="NewOrder.OrderRollbackPayment" Type="number" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudDatePicker T="DateTime?" Label="Order Date" @bind-Value="NewOrder.OrderDate" Required />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker T="DateTime?" Label="Received Date" @bind-Value="NewOrder.OrderReceivedDate" Required />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudCheckBox Label="Payment Bill Uploaded" @bind-Value="NewOrder.PaymentBillUploaded" Required />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Payment Bill Directory" @bind-Value="NewOrder.PaymentBillDir" />
+                </MudItem>
+            </MudGrid>
+
+            <MudTextField Label="Product Data" @bind-Value="NewOrder.ProductData" />
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled" OnClick="CloseDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled" OnClick="SaveOrder">
+            @if (isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                <MudText Class="ms-2">Saving...</MudText>
+            }
+            else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "New Order";
+
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    [Parameter]
+    public Order EditOrder { get; set; }
+
+    private Order NewOrder = new Order();
+    private bool success = false;
+    private MudForm form;
+    private bool isLoading = false;
+
+    public DateTime? OrderDate { get; set; }
+    public DateTime? OrderReceivedDate { get; set; }
+
+    private List<OrderReceiveStatus> OrderReceiveStatusOptions;
+
+    protected override void OnInitialized()
+    {
+        OrderReceiveStatusOptions = Enum.GetValues<OrderReceiveStatus>().ToList();
+
+        if (IsEdit)
+        {
+            NewOrder = EditOrder;
+        }
+    }
+
+    private async Task SaveOrder()
+    {
+        if (form != null)
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            await form.Validate();
+
+            if (!form.IsValid)
+            {
+                isLoading = false;
+                return;
+            }
+
+            if (success)
+            {
+                if (!IsEdit)
+                {
+                    // if (_date.HasValue)  // Check if _date has a value before using .Value
+                    // {
+                    //     NewEmployee.EmployeeDOB = _date.Value;
+                    // }
+                    // if (NewEmployee.EmployeePassportNO == null)
+                    //     NewEmployee.EmployeePassportNO = "";
+                    // var response = await EmployeeVM.SaveEmployee(NewEmployee);
+                    // ShowResponseClose(response);
+                }
+                else
+                {
+                    // if (_date.HasValue)  // Check if _date has a value before using .Value
+                    // {
+                    //     NewEmployee.EmployeeDOB = _date.Value;
+                    // }
+                    // if (NewEmployee.EmployeePassportNO == null)
+                    //     NewEmployee.EmployeePassportNO = "";
+                    // var response = await EmployeeVM.UpdateEmployee(NewEmployee);
+                    // ShowResponseClose(response);
+                }
+            }
+        }
+    }
+
+    private async Task CloseDialog()
+    {
+        //await EmployeeVM.LoadEmployees();
+        MudDialog.Cancel();
+    }
+
+    private async void ShowResponseClose(ResponseModel response)
+    {
+        await Task.Delay(500);
+
+        isLoading = false;
+        StateHasChanged();
+
+        if (response != null)
+        {
+            if (response.IsSuccess)
+            {
+                Snackbar.Add(response.Message, Severity.Success);
+                //await EmployeeVM.LoadEmployees();
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add(response.Message, Severity.Error);
+                return;
+            }
+        }
+    }
+}

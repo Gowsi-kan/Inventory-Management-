@@ -61,6 +61,7 @@ namespace InventoryManagement
 
             builder.Services.AddScoped<ProductService>();
             builder.Services.AddScoped<UserService>();
+            builder.Services.AddScoped<OrderService>();
             builder.Services.AddScoped<EmployeeService>();
             builder.Services.AddScoped<InvoiceService>();
             builder.Services.AddScoped<ExpenseService>();
@@ -69,6 +70,7 @@ namespace InventoryManagement
 
             builder.Services.AddSingleton<InventoryViewModel>();
             builder.Services.AddSingleton<LoginViewModel>();
+            builder.Services.AddSingleton<OrdersViewModel>();
             builder.Services.AddSingleton<EmployeeViewModel>();
             builder.Services.AddSingleton<InvoiceViewModel>();
             builder.Services.AddSingleton<ExpenseViewModel>();

@@ -201,6 +201,7 @@
             Snackbar.Add($"No Bill Added!", Severity.Warning);
             NewExpense.ExpenseBillUploaded = false;
             NewExpense.ExpensesBillFileDir = String.Empty;
+            return;
         } 
         else
         {
@@ -226,11 +227,13 @@
                 {
                     NewExpense.ExpenseBillUploaded = false;
                     Snackbar.Add($"File NOT found after writing: {filePath}", Severity.Error);
+                    return;
                 }
             }
             catch (Exception ex)
             {
                 Snackbar.Add($"File NOT found after writing: {filePath}", Severity.Error);
+                return;
             }
         }
 
@@ -318,13 +321,12 @@
             if (response.IsSuccess)
             {
                 Snackbar.Add(response.Message, Severity.Success);
-                return;
             }
             else
             {
                 Snackbar.Add(response.Message, Severity.Error);
-                return;
             }
+            return;
         }
     }
 
