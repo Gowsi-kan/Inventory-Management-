@@ -17,7 +17,8 @@ namespace InventoryManagement.Models
     public class User
     {
         public int UserId { get; set; }
-        public string UserName { get; set; }
-        public Int16 UserPrivilege { get; set; }
+        public string userName { get; set; }
+        public string userPassword { get; set; }
+        public Int16 userPrivilege { get; set; }
     }
 }

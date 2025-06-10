@@ -1,0 +1,175 @@
+﻿@page "/users"
+
+@inject LoginViewModel LoginVM
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<style>
+    .header-class {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 200px);
+        text-align: center;
+    }
+</style>
+
+<MudCard Class="mt-2">
+    <MudCardHeader Class="header-class">
+        <MudGrid>
+            <MudItem xs="12" md="12">
+                <MudText Typo="Typo.h6" Color="Color.Primary">User Management</MudText>
+                <MudText Typo="Typo.subtitle2">Manage users and their account permissions here.</MudText>
+            </MudItem>
+            <MudItem xs="12" md="12" Class="header-class">
+                <MudText Typo="Typo.subtitle1" Color="Color.Primary">All Users</MudText>
+                <IconButton OnClick="OpenNewUserDialog" Icon="@Icons.Material.Filled.Add">New User</IconButton>
+            </MudItem>
+        </MudGrid>
+        
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (!IsUsersLoaded)
+        {
+            <MudContainer Class="loading-container">
+                <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center">
+                    <MudItem>
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2 mt-2" Typo="Typo.subtitle1">Loading Users...</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+        else
+        {
+            <MudTable Items="LoginVM.Users" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
+                <HeaderContent>
+                    <MudTh>Avatar</MudTh>
+                    <MudTh>Employee ID</MudTh>
+                    <MudTh>First Name</MudTh>
+                    <MudTh>Account Type</MudTh>
+                    <MudTh Style="text-align:right">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudAvatar Color="Color.Secondary" Size="Size.Small">
+                            @GetInitials(context.userName)
+                        </MudAvatar>
+                    </MudTd>
+                    <MudTd>@context.UserId</MudTd>
+                    <MudTd>@context.userName</MudTd>
+                    <MudTd>
+                        @{
+                            var chipData = Utility.GetAccountTypeChip(context.userPrivilege);
+                        }
+                        <MudChip T="string" Variant="Variant.Outlined" Color="@chipData.ChipColor" Size="Size.Small">
+                            @chipData.Label
+                        </MudChip>
+                    </MudTd>
+                    <MudTd Style="text-align:right">
+                        <!-- Edit Button -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => EditEmployee(context)" />
+                        <!-- Delete Button -->
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="() => DeleteEmployee(context)" />
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private bool IsUsersLoaded { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsUsersLoaded = false;
+        StateHasChanged(); // Refresh UI
+
+        await LoginVM.LoadUsers();
+
+        await Task.Delay(500);
+        IsUsersLoaded = true;
+        StateHasChanged(); // Refresh UI
+    }
+
+    private async Task OpenNewUserDialog()
+    {
+        try
+        {
+            var options = new DialogOptions { CloseButton = true, CloseOnEscapeKey = true };
+            var dialog = DialogService.Show<NewUserDialog>("Add New User", options);
+
+            var result = await dialog.Result; // Await the result properly
+
+            if (result?.Canceled == false) // If dialog was not canceled
+            {
+                await LoginVM.LoadUsers();
+            }
+
+        } catch (Exception ex) 
+        {
+            Snackbar.Add($"Error opening dialog: {ex.Message}", Severity.Error);
+            return;
+		}
+        
+    }
+
+    private async Task EditEmployee(User user)
+    {
+        // var parameters = new DialogParameters<NewEmployeeDialog>
+        // {
+        //     { x => x.Title, "Update Employee Details" },
+        //     { x => x.IsEdit, true },
+        //     { x => x.EditEmployee, employee },
+        // };
+
+        // var options = new DialogOptions { CloseButton = true, CloseOnEscapeKey = true };
+
+        // var dialog = DialogService.Show<NewEmployeeDialog>("Update Employee", parameters, options);
+        // var result = await dialog.Result;
+
+        // if (result?.Canceled == false)
+        // {
+        //     IsUsersLoaded = false;
+        //     StateHasChanged(); // Refresh UI
+
+        //     await LoginVM.LoadUsers();
+
+        //     IsUsersLoaded = true;
+        //     StateHasChanged(); // Refresh UI
+        // }
+    }
+
+    private async Task DeleteEmployee(User user)
+    {
+        // var confirmed = await DialogService.ShowMessageBox(
+        //     "Confirm Delete",
+        //     $"Are you sure you want to delete {employee.EmployeeFirstName}?",
+        //     yesText: "Delete",
+        //     noText: "Cancel",
+        //     options: new DialogOptions { CloseButton = true });
+
+        // if ((bool)confirmed)
+        // {
+        //     //await LoginVM.RemoveEmployee(employee);
+        //     Snackbar.Add($"Employee: {employee.EmployeeFirstName} removed Successfully.", Severity.Success);
+        //     await LoginVM.LoadUsers();
+        // }
+    }
+
+    private string GetInitials(string firstName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+            return "NA";
+
+        return $"{char.ToUpper(firstName[0])}";
+    }
+}

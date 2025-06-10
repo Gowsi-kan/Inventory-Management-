@@ -42,6 +42,7 @@
         {
             <MudTable Items="EmployeeVM.Employees" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
                 <HeaderContent>
+                    <MudTh>Avatar</MudTh>
                     <MudTh>Employee ID</MudTh>
                     <MudTh>First Name</MudTh>
                     <MudTh>Last Name</MudTh>
@@ -56,6 +57,11 @@
                 </HeaderContent>
 
                 <RowTemplate>
+                    <MudTd>
+                        <MudAvatar Color="Color.Secondary" Size="Size.Small">
+                            @GetInitials(context.EmployeeFirstName, context.EmployeeLastName)
+                        </MudAvatar>
+                    </MudTd>
                     <MudTd>@context.EmployeeId</MudTd>
                     <MudTd>@context.EmployeeFirstName</MudTd>
                     <MudTd>@context.EmployeeLastName</MudTd>
@@ -64,8 +70,14 @@
                     <MudTd>@(string.IsNullOrEmpty(context.EmployeePassportNO) ? "N/A" : context.EmployeePassportNO)</MudTd>
                     <MudTd>@context.EmployeePhoneNumber</MudTd>
                     <MudTd Style="text-align:center">@context.EmployeeYearOfExpYears</MudTd>
-                    <MudTd Style="text-align:center">@(context.EmployeeOLQualified ? "Yes" : "No")</MudTd>
-                    <MudTd Style="text-align:center">@(context.EmployeeALQualified ? "Yes" : "No")</MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudIcon Icon="@(context.EmployeeOLQualified ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)"
+                                 Color="@(context.EmployeeOLQualified ? Color.Success : Color.Error)" />
+                    </MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudIcon Icon="@(context.EmployeeALQualified ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)"
+                                 Color="@(context.EmployeeALQualified ? Color.Success : Color.Error)" />
+                    </MudTd>
                     <MudTd Style="text-align:right">
                         <!-- Edit Button -->
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => EditEmployee(context)" />
@@ -147,5 +159,13 @@
             Snackbar.Add($"Employee: {employee.EmployeeFirstName} removed Successfully.", Severity.Success);
             await EmployeeVM.LoadEmployees();
         }
+    }
+
+    private string GetInitials(string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+            return "NA";
+
+        return $"{char.ToUpper(firstName[0])}{char.ToUpper(lastName[0])}";
     }
 }
