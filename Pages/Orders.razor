@@ -1,7 +1,210 @@
 ﻿@page "/orders"
 
-<h3>Orders</h3>
+@inject OrdersViewModel OrderVM
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+
+<style>
+    .header-class {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: calc(100vh - 200px);
+        text-align: center;
+    }
+</style>
+
+<MudCard Class="mt-2">
+    <MudCardHeader Class="header-class">
+        <MudText Typo="Typo.h6">Orders</MudText>
+        <IconButton OnClick="OpenNewOrderDialog" Icon="@Icons.Material.Filled.Add">New Order</IconButton>
+    </MudCardHeader>
+
+    <MudCardContent>
+        @if (!IsOrdersLoaded)
+        {
+            <MudContainer Class="loading-container">
+                <MudGrid Justify="Justify.Center" AlignItems="AlignItems.Center">
+                    <MudItem>
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ms-2 mt-2" Typo="Typo.subtitle1">Loading Orders...</MudText>
+                    </MudItem>
+                </MudGrid>
+            </MudContainer>
+        }
+        else
+        {
+            <MudTable Items="OrderVM.Orders" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
+                <HeaderContent>
+                    <MudTh>Company Name</MudTh>
+                    <MudTh>Phone Number</MudTh>
+                    <MudTh>Advance Payment</MudTh>
+                    <MudTh>Final Payment</MudTh>
+                    <MudTh>Rollback Payment</MudTh>
+                    <MudTh Style="text-align:center">Receive Status</MudTh>
+                    <MudTh Style="text-align:center">Order Date</MudTh>
+                    <MudTh Style="text-align:center">Received Date</MudTh>
+                    <MudTh Style="text-align:center">Payment Bill Uploaded</MudTh>
+                    <MudTh Style="text-align:right">Actions</MudTh>
+                </HeaderContent>
+
+                <RowTemplate>
+                    <MudTd>@context.CompanyName</MudTd>
+                    <MudTd>@context.CompanyPhoneNumber</MudTd>
+                    <MudTd>@context.OrderAdvancePayment</MudTd>
+                    <MudTd>@context.OrderFinalPayment</MudTd>
+                    <MudTd>@context.OrderRollbackPayment</MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudChip Color="@GetStatusColor(context.OrderReceiveStatus)" Variant="Variant.Filled" Size="Size.Small" T="string">
+                            @FormatStatus(context.OrderReceiveStatus)
+                        </MudChip>
+                    </MudTd>
+                    <MudTd Style="text-align:center">@context.OrderDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd Style="text-align:center">@context.OrderReceivedDate.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudIcon Icon="@(context.PaymentBillUploaded? Icons.Material.Filled.Check : Icons.Material.Filled.Close)"
+                                 Color="@(context.PaymentBillUploaded ? Color.Success : Color.Error)" />
+                    </MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Primary" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopLeft" ActivationEvent="@MouseEvent.MouseOver" Dense Size="Size.Small">
+
+                            <MudMenuItem OnClick="@(() => SetStatus(context, "Fully"))">
+                                <MudIcon Icon="@Icons.Material.Filled.Paid" Class="me-2" />
+                                Fully Paid
+                            </MudMenuItem>
+
+                            <MudMenuItem OnClick="@(() => SetStatus(context, "Partially"))">
+                                <MudIcon Icon="@Icons.Material.Filled.Paid" Class="me-2" />
+                                Partially Paid
+                            </MudMenuItem>
+
+                            <MudDivider />
+
+                            <MudMenuItem OnClick="@(() => EditOrder(context))">
+                                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="me-2" />
+                                Edit
+                            </MudMenuItem>
+                            <MudMenuItem OnClick="@(() => DeleteOrder(context))">
+                                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="me-2" Color="Color.Error" />
+                                Delete
+                            </MudMenuItem>
+                        </MudMenu>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+
+        }
+    </MudCardContent>
+</MudCard>
 
 @code {
+    private bool IsOrdersLoaded { get; set; } = false;
 
+    protected override async Task OnInitializedAsync()
+    {
+        IsOrdersLoaded = false;
+        StateHasChanged(); // Refresh UI
+
+        await OrderVM.LoadOrders();
+
+        await Task.Delay(500);
+        IsOrdersLoaded = true;
+        StateHasChanged(); // Refresh UI
+    }
+
+    private async Task OpenNewOrderDialog()
+    {
+        var options = new DialogOptions { CloseButton = true, CloseOnEscapeKey = true };
+        var dialog = DialogService.Show<NewOrderDialog>("Add New Order", options);
+
+        var result = await dialog.Result; // Await the result properly
+
+        if (result.Canceled == false) // If dialog was not canceled
+        {
+            await OrderVM.LoadOrders();
+        }
+    }
+
+    private async Task EditOrder(Order order)
+    {
+        var parameters = new DialogParameters<NewOrderDialog>
+        {
+            { x => x.Title, "Update Order Details" },
+            { x => x.IsEdit, true },
+            { x => x.EditOrder, order },
+        };
+
+        var options = new DialogOptions { CloseButton = true, CloseOnEscapeKey = true };
+
+        var dialog = DialogService.Show<NewOrderDialog>("Update Order", parameters, options);
+        var result = await dialog.Result;
+
+        if (result?.Canceled == false)
+        {
+            IsOrdersLoaded = false;
+            StateHasChanged(); // Refresh UI
+
+            await OrderVM.LoadOrders();
+
+            IsOrdersLoaded = true;
+            StateHasChanged(); // Refresh UI
+        }
+    }
+
+    private async Task DeleteOrder(Order order)
+    {
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete this Order?",
+            yesText: "Delete",
+            noText: "Cancel",
+            options: new DialogOptions { CloseButton = true });
+
+        if ((bool)confirmed)
+        {
+            await OrderVM.DeleteOrder(order.OrderId);
+            Snackbar.Add($"Order: {order.OrderId} Deleted Successfully.", Severity.Success);
+            await OrderVM.LoadOrders();
+        }
+    }
+
+    private async Task SetStatus(Order order, string newStatus)
+    {
+        // Update the order's payment status here
+        order.OrderReceiveStatus = newStatus.ToUpper();
+
+        // Save back to database or viewmodel
+        await OrderVM.UpdateOrder(order);
+
+        Snackbar.Add($"Status updated to {newStatus}.", Severity.Success);
+        await OrderVM.LoadOrders();
+    }
+
+    private Color GetStatusColor(string status)
+    {
+        return status?.ToUpper() switch
+        {
+            "NOTRECEIVED" => Color.Error,
+            "PARTIALLY" => Color.Warning,
+            "FULLY" => Color.Success,
+            _ => Color.Default
+        };
+    }
+
+    private string FormatStatus(string status)
+    {
+        return status?.ToUpper() switch
+        {
+            "NOTRECEIVED" => "Not Received",
+            "PARTIALLY" => "Partially Paid",
+            "FULLY" => "Fully Paid",
+            _ => status
+        };
+    }
 }

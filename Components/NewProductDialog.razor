@@ -98,8 +98,8 @@
 
     private async void ShowResponseClose(ResponseModel response)
     {
-        // Add 3 seconds delay before stopping loading
-        await Task.Delay(2000);
+        // Add 1 seconds delay before stopping loading
+        await Task.Delay(1000);
 
         isLoading = false; // Hide loading state
         StateHasChanged(); // Refresh UI

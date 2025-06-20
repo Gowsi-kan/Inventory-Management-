@@ -1,0 +1,304 @@
+﻿@using System.Text
+@using System.Text.Json
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@inject OrdersViewModel OrderVM
+
+<MudDialog>
+    <TitleContent>Order Form</TitleContent>
+    <DialogContent>
+        <MudForm Model="NewOrder" @bind-IsValid="success" @ref="form">
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Company Name" @bind-Value="NewOrder.CompanyName" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Phone Number" @bind-Value="NewOrder.CompanyPhoneNumber" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Street Address" @bind-Value="NewOrder.CompanyAddressStreet" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="City" @bind-Value="NewOrder.CompanyAddressCity" Required="true" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="District" @bind-Value="NewOrder.CompanyAddressDistrict" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Province" @bind-Value="NewOrder.CompanyAddressProvince" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Country" @bind-Value="NewOrder.CompanyAddressCountry" Required="true" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudSelect Label="Advance Payment Type" @bind-Value="NewOrder.OrderAdvancePaymentType" Required="true">
+                        <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+                        <MudSelectItem Value="@("Card")">Card</MudSelectItem>
+                        <MudSelectItem Value="@("Cheque")">Cheque</MudSelectItem>
+                        <MudSelectItem Value="@("Bank")">Bank Transfer</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Advance Payment" @bind-Value="NewOrder.OrderAdvancePayment" Type="number" Required/>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudSelect Label="Final Payment Type" @bind-Value="NewOrder.OrderFinalPaymentType" Required="false">
+                        <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
+                        <MudSelectItem Value="@("Card")">Card</MudSelectItem>
+                        <MudSelectItem Value="@("Cheque")">Cheque</MudSelectItem>
+                        <MudSelectItem Value="@("Bank")">Bank Transfer</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Final Payment" @bind-Value="NewOrder.OrderFinalPayment" Type="number" />
+                </MudItem>
+            </MudGrid>
+
+            <MudDivider Class="my-4" />
+
+            <MudSelect Label="Receive Status" @bind-Value="NewOrder.OrderReceiveStatus" Required>
+                @foreach (var status in OrderReceiveStatusOptions)
+                {
+                    <MudSelectItem Value="@status.ToString().ToUpper()">@EnumHelper.GetDisplayName(status)</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudCheckBox Label="Payment Rollbacked" @bind-Value="NewOrder.OrderPaymentRollbacked" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Rollback Payment" @bind-Value="NewOrder.OrderRollbackPayment" Type="number" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudDatePicker T="DateTime?" Editable Label="Order Date" @bind-Date="OrderDate" Required Mask="@(new DateMask("0000-00-00"))" DateFormat="yyyy-MM-dd" />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudDatePicker T="DateTime?" Editable Label="Received Date" @bind-Date="OrderReceivedDate" Required Mask="@(new DateMask("0000-00-00"))" DateFormat="yyyy-MM-dd" />
+                </MudItem>
+            </MudGrid>
+
+            <MudGrid Spacing="0">
+                <MudItem xs="12" md="6">
+                    <MudCheckBox Label="Payment Bill Uploaded" @bind-Value="NewOrder.PaymentBillUploaded" Required />
+                </MudItem>
+                <MudItem xs="12" md="6">
+                    <MudTextField Label="Payment Bill Directory" @bind-Value="NewOrder.PaymentBillDir" />
+                </MudItem>
+            </MudGrid>
+
+            <MudPaper Class="p-3 mt-4" Elevation="0">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Product List</MudText>
+
+                <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+                    <MudItem xs="12" sm="5" md="4">
+                        <MudTextField Label="Product ID" @bind-Value="CurrentProduct.ProductId" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" md="4">
+                        <MudTextField Label="Quantity" @bind-Value="CurrentProduct.Quantity" Type="number" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3" md="4">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddProduct" Size="Size.Small" Class="mt-2 ml-3">Add Product</MudButton>
+                    </MudItem>
+                </MudGrid>
+
+                @if (Products.Any())
+                {
+                    <MudList Class="mt-3" Dense="true" T="ProductEntry">
+                        @foreach (var product in Products)
+                        {
+                            <MudListItem>
+                                <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="w-100">
+                                    <MudText>@product.ProductId; @product.Quantity</MudText>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => RemoveProduct(product))" />
+                                </MudStack>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudPaper>
+            <MudSpacer />
+
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled" OnClick="CloseDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled" OnClick="SaveOrder">
+            @if (isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                <MudText Class="ms-2">Saving...</MudText>
+            }
+            else
+            {
+                <MudText>Save</MudText>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "New Order";
+
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    [Parameter]
+    public Order EditOrder { get; set; }
+
+    private Order NewOrder = new Order();
+    private bool success = false;
+    private MudForm form;
+    private bool isLoading = false;
+
+    public DateTime? OrderDate { get; set; }
+    public DateTime? OrderReceivedDate { get; set; }
+
+    private List<ProductEntry> Products = new();
+    private ProductEntry CurrentProduct = new();
+
+    private List<OrderReceiveStatus> OrderReceiveStatusOptions;
+
+    protected override void OnInitialized()
+    {
+        OrderReceiveStatusOptions = Enum.GetValues<OrderReceiveStatus>().ToList();
+
+        if (IsEdit)
+        {
+            if (EditOrder.OrderReceiveStatus.Equals("NOT RECEIVED", StringComparison.OrdinalIgnoreCase))
+            {
+                EditOrder.OrderReceiveStatus = "NOTRECEIVED";
+            }
+
+            OrderDate = EditOrder.OrderDate;
+            OrderReceivedDate = EditOrder.OrderReceivedDate;
+
+            NewOrder = EditOrder;
+
+            // 🟢 Decode ProductData into ProductEntry list
+            Products = new List<ProductEntry>();
+
+            if (!string.IsNullOrWhiteSpace(EditOrder.ProductData))
+            {
+                var items = EditOrder.ProductData.Split(',');
+
+                foreach (var item in items)
+                {
+                    var parts = item.Split(';');
+                    if (parts.Length == 2 && float.TryParse(parts[1], out float qty))
+                    {
+                        Products.Add(new ProductEntry
+                        {
+                            ProductId = parts[0].Trim(),
+                            Quantity = qty
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    private async Task SaveOrder()
+    {
+        if (form != null)
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            NewOrder.OrderDate = OrderDate ?? DateTime.Now;
+            NewOrder.OrderReceivedDate = OrderReceivedDate ?? DateTime.Now;
+
+            NewOrder.ProductData = string.Join(",", Products.Select(p => $"{p.ProductId};{p.Quantity}"));
+
+            await form.Validate();
+
+            if (!form.IsValid)
+            {
+                isLoading = false;
+                return;
+            }
+
+            if (success && !IsEdit)
+            {
+                var response = await OrderVM.AddOrder(NewOrder);
+                await ShowResponseClose(response);
+            }
+
+            if (success && IsEdit)
+            {
+                var response = await OrderVM.UpdateOrder(NewOrder);
+                await ShowResponseClose(response);
+            }
+
+            isLoading = false;
+        }
+    }
+
+    private async Task CloseDialog()
+    {
+        MudDialog.Cancel();
+    }
+
+    private async Task ShowResponseClose(ResponseModel response)
+    {
+        await Task.Delay(1000);
+
+        isLoading = false;
+        StateHasChanged();
+
+        if (response != null)
+        {
+            if (response.IsSuccess)
+            {
+                Snackbar.Add(response.Message, Severity.Success);
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                Snackbar.Add(response.Message, Severity.Error);
+                return;
+            }
+        }
+    }
+
+    private void AddProduct()
+    {
+        if (!string.IsNullOrWhiteSpace(CurrentProduct.ProductId) && CurrentProduct.Quantity > 0)
+        {
+            Products.Add(new ProductEntry
+            {
+                ProductId = CurrentProduct.ProductId.Trim(),
+                Quantity = CurrentProduct.Quantity
+            });
+
+            // Reset input
+            CurrentProduct = new ProductEntry();
+        }
+    }
+
+    private void RemoveProduct(ProductEntry product)
+    {
+        Products.Remove(product);
+    }
+
+    public class ProductEntry
+    {
+        public string ProductId { get; set; }
+        public float Quantity { get; set; }
+    }
+}

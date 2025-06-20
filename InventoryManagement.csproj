@@ -44,7 +44,7 @@
     </PropertyGroup>
 	
 	<PropertyGroup>
-		<ApplicationIcon>Resources\AppIcon\Icon_App.ico</ApplicationIcon>
+		<ApplicationIcon>Resources\AppIcon\ShopIcon.ico</ApplicationIcon>
 	</PropertyGroup>
 
     <ItemGroup>
@@ -67,6 +67,7 @@
 
     <ItemGroup>
       <Content Remove="wwwroot\Icon_App.ico" />
+      <Content Remove="wwwroot\ShopIcon.png" />
     </ItemGroup>
 
     <ItemGroup>
@@ -82,7 +83,10 @@
 
     <ItemGroup>
       <Resource Include="wwwroot\Icon_App.ico">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      </Resource>
+      <Resource Include="wwwroot\ShopIcon.png">
+        <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       </Resource>
     </ItemGroup>
 

@@ -117,29 +117,41 @@
 		<MudItem xs="12" md="3">
 			<MudCard Class="" Style="padding: 1rem; height: calc(100vh - 110px);" Elevation="1">
 				<div class="mb-3 custom-between">
-					<MudText Typo="Typo.h6">Subtotal</MudText>
-					<MudText Typo="Typo.h6">Rs @InvoiceVM.SubTotal</MudText>
+					<MudText Typo="Typo.subtitle1">Subtotal</MudText>
+					<MudText Typo="Typo.subtitle1">Rs @InvoiceVM.SubTotal</MudText>
 				</div>
 				<div class="mb-3 custom-between">
-					<MudText Typo="Typo.h6">Discount</MudText>
-					<MudText Typo="Typo.h6" Color="Color.Success">Rs @InvoiceVM.TotalDiscount</MudText>
+					<MudText Typo="Typo.subtitle1">Discount</MudText>
+					<MudText Typo="Typo.subtitle1" Color="Color.Success">Rs @InvoiceVM.TotalDiscount</MudText>
 				</div>
 				<div class="mb-3 custom-between">
-					<MudText Typo="Typo.h6">Total</MudText>
-					<MudText Typo="Typo.h6">Rs @InvoiceVM.Total</MudText>
+					<MudText Typo="Typo.subtitle1">Total</MudText>
+					<MudText Typo="Typo.subtitle1">Rs @InvoiceVM.Total</MudText>
 				</div>
 				<div class="mb-3 custom-between">
-					<MudText Typo="Typo.h6">Pay</MudText>
+					<MudStack>
+						<MudText Typo="Typo.subtitle1">Payment Type</MudText>
+						<div>
+							<MudChipSet T="string" @bind-SelectedValue-="InvoiceVM.PaymentType" SelectionMode="SelectionMode.SingleSelection" CheckMark Variant="Variant.Text" Color="Color.Primary">
+								<MudChip Value="@("Cash")" Color="Color.Secondary" Default="true">Cash</MudChip>
+								<MudChip Value="@("Card")" Color="Color.Secondary">Card</MudChip>
+								<MudChip Value="@("Cheque")" Color="Color.Secondary">Cheque</MudChip>
+								<MudChip Value="@("Bank Transfer")" Color="Color.Secondary">Bank Transfer</MudChip>
+							</MudChipSet>
+						</div>
+					</MudStack>
+				</div>
+				<div class="mb-3 custom-between">
+					<MudText Typo="Typo.subtitle1">Pay</MudText>
 					<div>
 						<MudTextField style="max-width: 100px;" @bind-Value="InvoiceVM.PayAmount" Margin="Margin.Dense" Variant="Variant.Outlined" Adornment="Adornment.End" AdornmentText="Rs"/>
 					</div>
 				</div>
 				<div class="mb-3 custom-between">
-					<MudText Typo="Typo.h6">Balance</MudText>
-					<MudText Typo="Typo.h6" Color="Color.Error">Rs @InvoiceVM.Balance</MudText>
+					<MudText Typo="Typo.subtitle1">Balance</MudText>
+					<MudText Typo="Typo.subtitle1" Color="Color.Error">Rs @InvoiceVM.Balance</MudText>
 				</div>
-				<MudButton Color="Color.Primary" Variant="Variant.Filled" Class="mt-2" OnClick="PrintBill" Disabled="@IsProcessing"> 
-					@* <MudIcon Icon="@Icons.Material.Filled.Print" /> Print Bill *@
+				<MudButton Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled" Class="mt-2" OnClick="PrintBill" Disabled="@IsProcessing">
 					@if (IsProcessing)
 					{
 						<MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />

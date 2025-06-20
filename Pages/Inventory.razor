@@ -133,11 +133,14 @@
             noText: "Cancel",
             options: new DialogOptions { CloseButton = true });
 
-        if ((bool)confirmed)
+        if (confirmed != null && confirmed.HasValue)
         {
-            await InventoryVM.DeleteProduct(product);
-            Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
-            await InventoryVM.LoadProducts();
+            if ((bool)confirmed)
+            {
+                await InventoryVM.DeleteProduct(product);
+                Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
+                await InventoryVM.LoadProducts();
+            }
         }
     }
 }

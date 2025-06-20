@@ -16,8 +16,12 @@ Global
 		{0B8C7FC0-9692-4F97-95D3-849464A6F81A}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
 		{0B8C7FC0-9692-4F97-95D3-849464A6F81A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0B8C7FC0-9692-4F97-95D3-849464A6F81A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B8C7FC0-9692-4F97-95D3-849464A6F81A}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {10E7DE80-6092-4259-BAD1-9E34EF4CEC71}
 	EndGlobalSection
 EndGlobal

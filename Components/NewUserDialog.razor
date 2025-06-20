@@ -1,0 +1,102 @@
+﻿@inject LoginViewModel LoginVM
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>@Title</TitleContent>
+    <DialogContent>
+        <MudForm Model="NewUser" @bind-IsValid="@success" @ref="form">
+            <MudTextField T="string" Label="Username" @bind-Value="NewUser.userName" Required="true" />
+            <MudTextField T="string" Label="Password" @bind-Value="NewUser.userPassword" InputType="InputType.Password" Required="true" />
+            <MudSelect T="AccountType" Label="Privilege" @bind-Value="accountType" Required="true" Class="mt-2">
+                <MudSelectItem Value=@AccountType.Owner>Owner</MudSelectItem>
+                <MudSelectItem Value=@AccountType.Admin>Admin</MudSelectItem>
+                <MudSelectItem Value=@AccountType.User>User</MudSelectItem>
+            </MudSelect>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton Color="Color.Secondary" Variant="Variant.Filled" OnClick="CloseDialog">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="!success" OnClick="SaveUser">
+            @if (isLoading)
+            {
+                <MudProgressCircular Indeterminate="true" Size="Size.Small" Class="me-2" />
+                <span>Saving...</span>
+            }
+            else
+            {
+                <span>Save</span>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    private IMudDialogInstance MudDialog { get; set; }
+
+    [Parameter] 
+    public string Title { get; set; } = "Add New User";
+
+    [Parameter]
+    public bool IsEdit { get; set; } = false;
+
+    [Parameter]
+    public User EditUser { get; set; } = new User();
+
+    private User NewUser = new User();
+    private MudForm form;
+    private bool success = false;
+    private bool isLoading = false;
+
+    public AccountType accountType { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (IsEdit)
+        {
+            NewUser = EditUser;
+        }
+    }
+
+    private async Task CloseDialog()
+    {
+        await LoginVM.LoadUsers();
+        MudDialog.Cancel();
+    }
+
+    private async Task SaveUser()
+    {
+        if (form != null)
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            NewUser.userPrivilege = Utility.GetAccountType(accountType);
+
+            await form.Validate();
+
+            if (success)
+            {
+                var response = await LoginVM.AddUser(NewUser);
+                await Task.Delay(1000);
+                isLoading = false;
+
+                if (response != null && response.IsSuccess)
+                {
+                    Snackbar.Add(response.Message, Severity.Success);
+                    MudDialog.Close(DialogResult.Ok(true));
+                }
+                else
+                {
+                    Snackbar.Add(response?.Message ?? "Failed to add user", Severity.Error);
+                    return;
+                }
+            }
+            else
+            {
+                isLoading = false;
+            }
+        }
+    }
+}

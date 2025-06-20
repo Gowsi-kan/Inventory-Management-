@@ -42,10 +42,11 @@
         {
             <MudTable Items="EmployeeVM.Employees" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
                 <HeaderContent>
-                    <MudTh>Employee ID</MudTh>
+                    <MudTh Style="text-align:center">Avatar</MudTh>
+                    <MudTh Style="text-align:center">Employee ID</MudTh>
                     <MudTh>First Name</MudTh>
                     <MudTh>Last Name</MudTh>
-                    <MudTh>Date of Birth</MudTh>
+                    <MudTh Style="text-align:center">Date of Birth</MudTh>
                     <MudTh>NIC</MudTh>
                     <MudTh>Passport No</MudTh>
                     <MudTh>Phone Number</MudTh>
@@ -56,16 +57,27 @@
                 </HeaderContent>
 
                 <RowTemplate>
-                    <MudTd>@context.EmployeeId</MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudAvatar Color="Color.Secondary" Size="Size.Small">
+                            @GetInitials(context.EmployeeFirstName, context.EmployeeLastName)
+                        </MudAvatar>
+                    </MudTd>
+                    <MudTd Style="text-align:center">@context.EmployeeId</MudTd>
                     <MudTd>@context.EmployeeFirstName</MudTd>
                     <MudTd>@context.EmployeeLastName</MudTd>
-                    <MudTd>@context.EmployeeDOB.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd Style="text-align:center">@context.EmployeeDOB.ToString("yyyy-MM-dd")</MudTd>
                     <MudTd>@context.EmployeeNIC</MudTd>
                     <MudTd>@(string.IsNullOrEmpty(context.EmployeePassportNO) ? "N/A" : context.EmployeePassportNO)</MudTd>
                     <MudTd>@context.EmployeePhoneNumber</MudTd>
-                    <MudTd Style="text-align:right">@context.EmployeeYearOfExpYears</MudTd>
-                    <MudTd>@(context.EmployeeOLQualified ? "Yes" : "No")</MudTd>
-                    <MudTd>@(context.EmployeeALQualified ? "Yes" : "No")</MudTd>
+                    <MudTd Style="text-align:center">@context.EmployeeYearOfExpYears</MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudIcon Icon="@(context.EmployeeOLQualified ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)"
+                                 Color="@(context.EmployeeOLQualified ? Color.Success : Color.Error)" />
+                    </MudTd>
+                    <MudTd Style="text-align:center">
+                        <MudIcon Icon="@(context.EmployeeALQualified ? Icons.Material.Filled.Check : Icons.Material.Filled.Close)"
+                                 Color="@(context.EmployeeALQualified ? Color.Success : Color.Error)" />
+                    </MudTd>
                     <MudTd Style="text-align:right">
                         <!-- Edit Button -->
                         <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" OnClick="() => EditEmployee(context)" />
@@ -100,7 +112,7 @@
 
         var result = await dialog.Result; // Await the result properly
 
-        if (result.Canceled == false) // If dialog was not canceled
+        if (result?.Canceled == false) // If dialog was not canceled
         {
             await EmployeeVM.LoadEmployees();
         }
@@ -120,7 +132,7 @@
         var dialog = DialogService.Show<NewEmployeeDialog>("Update Employee", parameters, options);
         var result = await dialog.Result;
 
-        if (result.Canceled == false)
+        if (result?.Canceled == false)
         {
             IsEmployeesLoaded = false;
             StateHasChanged(); // Refresh UI
@@ -134,18 +146,26 @@
 
     private async Task DeleteEmployee(Employee employee)
     {
-        // var confirmed = await DialogService.ShowMessageBox(
-        //     "Confirm Delete",
-        //     $"Are you sure you want to delete {product.ProductName}?",
-        //     yesText: "Delete",
-        //     noText: "Cancel",
-        //     options: new DialogOptions { CloseButton = true });
+        var confirmed = await DialogService.ShowMessageBox(
+            "Confirm Delete",
+            $"Are you sure you want to delete {employee.EmployeeFirstName}?",
+            yesText: "Delete",
+            noText: "Cancel",
+            options: new DialogOptions { CloseButton = true });
 
-        // if ((bool)confirmed)
-        // {
-        //     await InventoryVM.DeleteProduct(product);
-        //     Snackbar.Add($"Product: {product.ProductName} Deleted Successfully.", Severity.Success);
-        //     await InventoryVM.LoadProducts();
-        // }
+        if ((bool)confirmed)
+        {
+            await EmployeeVM.RemoveEmployee(employee);
+            Snackbar.Add($"Employee: {employee.EmployeeFirstName} removed Successfully.", Severity.Success);
+            await EmployeeVM.LoadEmployees();
+        }
+    }
+
+    private string GetInitials(string firstName, string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+            return "NA";
+
+        return $"{char.ToUpper(firstName[0])}{char.ToUpper(lastName[0])}";
     }
 }

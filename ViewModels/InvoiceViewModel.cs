@@ -108,6 +108,18 @@ namespace InventoryManagement.ViewModels
             }
         }
 
+        private string paymentType = "Cash";
+
+        public string PaymentType
+        {
+            get => paymentType;
+            set
+            {
+                paymentType = value;
+                OnPropertyChanged();
+            }
+        }
+
         public float SubTotal => Products.Sum(p => p.Quantity * p.Price);
         public float TotalDiscount => Products.Sum(p => p.Quantity * p.Discount);
         public float Total => SubTotal - TotalDiscount;
@@ -189,31 +201,20 @@ namespace InventoryManagement.ViewModels
 
         public async Task<string> SaveInvoiceAsPdf()
         {
-            //var document = new BillingDocument(this);
-
-            //string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "invoice.pdf");
-            //await Task.Run(() => document.GeneratePdf(filePath));
-
-            //try
-            //{
-            //    using var process = new System.Diagnostics.Process();
-            //    process.StartInfo = new System.Diagnostics.ProcessStartInfo(filePath)
-            //    {
-            //        UseShellExecute = true
-            //    };
-            //    process.Start();
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("Failed to open PDF: " + ex.Message);
-            //}
-
             var document = new BillingDocument(this);
 
             string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "invoice.pdf");
             await Task.Run(() => document.GeneratePdf(filePath));
 
+            ClearFields();
+
             return filePath;
+        }
+
+        private void ClearFields()
+        {
+            Products.Clear();
+            PayAmount = 0;
         }
     }
 
