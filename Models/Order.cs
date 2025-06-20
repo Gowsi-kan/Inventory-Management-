@@ -38,15 +38,9 @@ namespace InventoryManagement.Models
         NotReceived,
 
         [Display(Name = "Partially Paid")]
-        PartiallyPaid,
+        Partially,
 
         [Display(Name = "Fully Paid")]
-        FullyPaid,
-
-        [Display(Name = "Cancelled")]
-        Cancelled,
-
-        [Display(Name = "Returned")]
-        Returned
+        Fully
     }
 }

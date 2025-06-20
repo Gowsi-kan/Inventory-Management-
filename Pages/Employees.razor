@@ -42,11 +42,11 @@
         {
             <MudTable Items="EmployeeVM.Employees" Hover="true" Dense="true" FixedHeader Height="calc(100vh - 200px)" Virtualize>
                 <HeaderContent>
-                    <MudTh>Avatar</MudTh>
-                    <MudTh>Employee ID</MudTh>
+                    <MudTh Style="text-align:center">Avatar</MudTh>
+                    <MudTh Style="text-align:center">Employee ID</MudTh>
                     <MudTh>First Name</MudTh>
                     <MudTh>Last Name</MudTh>
-                    <MudTh>Date of Birth</MudTh>
+                    <MudTh Style="text-align:center">Date of Birth</MudTh>
                     <MudTh>NIC</MudTh>
                     <MudTh>Passport No</MudTh>
                     <MudTh>Phone Number</MudTh>
@@ -57,15 +57,15 @@
                 </HeaderContent>
 
                 <RowTemplate>
-                    <MudTd>
+                    <MudTd Style="text-align:center">
                         <MudAvatar Color="Color.Secondary" Size="Size.Small">
                             @GetInitials(context.EmployeeFirstName, context.EmployeeLastName)
                         </MudAvatar>
                     </MudTd>
-                    <MudTd>@context.EmployeeId</MudTd>
+                    <MudTd Style="text-align:center">@context.EmployeeId</MudTd>
                     <MudTd>@context.EmployeeFirstName</MudTd>
                     <MudTd>@context.EmployeeLastName</MudTd>
-                    <MudTd>@context.EmployeeDOB.ToString("yyyy-MM-dd")</MudTd>
+                    <MudTd Style="text-align:center">@context.EmployeeDOB.ToString("yyyy-MM-dd")</MudTd>
                     <MudTd>@context.EmployeeNIC</MudTd>
                     <MudTd>@(string.IsNullOrEmpty(context.EmployeePassportNO) ? "N/A" : context.EmployeePassportNO)</MudTd>
                     <MudTd>@context.EmployeePhoneNumber</MudTd>

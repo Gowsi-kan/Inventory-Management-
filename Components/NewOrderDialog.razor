@@ -1,4 +1,8 @@
-﻿@inject ISnackbar Snackbar
+﻿@using System.Text
+@using System.Text.Json
+@inject ISnackbar Snackbar
+@inject HttpClient Http
+@inject OrdersViewModel OrderVM
 
 <MudDialog>
     <TitleContent>Order Form</TitleContent>
@@ -36,7 +40,7 @@
                         <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
                         <MudSelectItem Value="@("Card")">Card</MudSelectItem>
                         <MudSelectItem Value="@("Cheque")">Cheque</MudSelectItem>
-                        <MudSelectItem Value="@("Bank Transfer")">Bank Transfer</MudSelectItem>
+                        <MudSelectItem Value="@("Bank")">Bank Transfer</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
@@ -47,7 +51,7 @@
                         <MudSelectItem Value="@("Cash")">Cash</MudSelectItem>
                         <MudSelectItem Value="@("Card")">Card</MudSelectItem>
                         <MudSelectItem Value="@("Cheque")">Cheque</MudSelectItem>
-                        <MudSelectItem Value="@("Bank Transfer")">Bank Transfer</MudSelectItem>
+                        <MudSelectItem Value="@("Bank")">Bank Transfer</MudSelectItem>
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
@@ -60,7 +64,7 @@
             <MudSelect Label="Receive Status" @bind-Value="NewOrder.OrderReceiveStatus" Required>
                 @foreach (var status in OrderReceiveStatusOptions)
                 {
-                    <MudSelectItem Value="@status.ToString()">@EnumHelper.GetDisplayName(status)</MudSelectItem>
+                    <MudSelectItem Value="@status.ToString().ToUpper()">@EnumHelper.GetDisplayName(status)</MudSelectItem>
                 }
             </MudSelect>
 
@@ -75,10 +79,10 @@
 
             <MudGrid Spacing="0">
                 <MudItem xs="12" md="6">
-                    <MudDatePicker T="DateTime?" Label="Order Date" @bind-Value="NewOrder.OrderDate" Required />
+                    <MudDatePicker T="DateTime?" Editable Label="Order Date" @bind-Date="OrderDate" Required Mask="@(new DateMask("0000-00-00"))" DateFormat="yyyy-MM-dd" />
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudDatePicker T="DateTime?" Label="Received Date" @bind-Value="NewOrder.OrderReceivedDate" Required />
+                    <MudDatePicker T="DateTime?" Editable Label="Received Date" @bind-Date="OrderReceivedDate" Required Mask="@(new DateMask("0000-00-00"))" DateFormat="yyyy-MM-dd" />
                 </MudItem>
             </MudGrid>
 
@@ -91,10 +95,43 @@
                 </MudItem>
             </MudGrid>
 
-            <MudTextField Label="Product Data" @bind-Value="NewOrder.ProductData" />
+            <MudPaper Class="p-3 mt-4" Elevation="0">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Product List</MudText>
+
+                <MudGrid Spacing="2" AlignItems="AlignItems.Center">
+                    <MudItem xs="12" sm="5" md="4">
+                        <MudTextField Label="Product ID" @bind-Value="CurrentProduct.ProductId" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="4" md="4">
+                        <MudTextField Label="Quantity" @bind-Value="CurrentProduct.Quantity" Type="number" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" sm="3" md="4">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddProduct" Size="Size.Small" Class="mt-2 ml-3">Add Product</MudButton>
+                    </MudItem>
+                </MudGrid>
+
+                @if (Products.Any())
+                {
+                    <MudList Class="mt-3" Dense="true" T="ProductEntry">
+                        @foreach (var product in Products)
+                        {
+                            <MudListItem>
+                                <MudStack Row Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="w-100">
+                                    <MudText>@product.ProductId; @product.Quantity</MudText>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                   Color="Color.Error"
+                                                   Size="Size.Small"
+                                                   OnClick="@(() => RemoveProduct(product))" />
+                                </MudStack>
+                            </MudListItem>
+                        }
+                    </MudList>
+                }
+            </MudPaper>
+            <MudSpacer />
+
         </MudForm>
     </DialogContent>
-
     <DialogActions>
         <MudButton Color="Color.Secondary" Size="Size.Small" Variant="Variant.Filled" OnClick="CloseDialog">Cancel</MudButton>
         <MudButton Color="Color.Primary" Size="Size.Small" Variant="Variant.Filled" OnClick="SaveOrder">
@@ -132,6 +169,9 @@
     public DateTime? OrderDate { get; set; }
     public DateTime? OrderReceivedDate { get; set; }
 
+    private List<ProductEntry> Products = new();
+    private ProductEntry CurrentProduct = new();
+
     private List<OrderReceiveStatus> OrderReceiveStatusOptions;
 
     protected override void OnInitialized()
@@ -140,7 +180,36 @@
 
         if (IsEdit)
         {
+            if (EditOrder.OrderReceiveStatus.Equals("NOT RECEIVED", StringComparison.OrdinalIgnoreCase))
+            {
+                EditOrder.OrderReceiveStatus = "NOTRECEIVED";
+            }
+
+            OrderDate = EditOrder.OrderDate;
+            OrderReceivedDate = EditOrder.OrderReceivedDate;
+
             NewOrder = EditOrder;
+
+            // 🟢 Decode ProductData into ProductEntry list
+            Products = new List<ProductEntry>();
+
+            if (!string.IsNullOrWhiteSpace(EditOrder.ProductData))
+            {
+                var items = EditOrder.ProductData.Split(',');
+
+                foreach (var item in items)
+                {
+                    var parts = item.Split(';');
+                    if (parts.Length == 2 && float.TryParse(parts[1], out float qty))
+                    {
+                        Products.Add(new ProductEntry
+                        {
+                            ProductId = parts[0].Trim(),
+                            Quantity = qty
+                        });
+                    }
+                }
+            }
         }
     }
 
@@ -151,6 +220,11 @@
             isLoading = true;
             StateHasChanged();
 
+            NewOrder.OrderDate = OrderDate ?? DateTime.Now;
+            NewOrder.OrderReceivedDate = OrderReceivedDate ?? DateTime.Now;
+
+            NewOrder.ProductData = string.Join(",", Products.Select(p => $"{p.ProductId};{p.Quantity}"));
+
             await form.Validate();
 
             if (!form.IsValid)
@@ -159,43 +233,30 @@
                 return;
             }
 
-            if (success)
+            if (success && !IsEdit)
             {
-                if (!IsEdit)
-                {
-                    // if (_date.HasValue)  // Check if _date has a value before using .Value
-                    // {
-                    //     NewEmployee.EmployeeDOB = _date.Value;
-                    // }
-                    // if (NewEmployee.EmployeePassportNO == null)
-                    //     NewEmployee.EmployeePassportNO = "";
-                    // var response = await EmployeeVM.SaveEmployee(NewEmployee);
-                    // ShowResponseClose(response);
-                }
-                else
-                {
-                    // if (_date.HasValue)  // Check if _date has a value before using .Value
-                    // {
-                    //     NewEmployee.EmployeeDOB = _date.Value;
-                    // }
-                    // if (NewEmployee.EmployeePassportNO == null)
-                    //     NewEmployee.EmployeePassportNO = "";
-                    // var response = await EmployeeVM.UpdateEmployee(NewEmployee);
-                    // ShowResponseClose(response);
-                }
+                var response = await OrderVM.AddOrder(NewOrder);
+                await ShowResponseClose(response);
             }
+
+            if (success && IsEdit)
+            {
+                var response = await OrderVM.UpdateOrder(NewOrder);
+                await ShowResponseClose(response);
+            }
+
+            isLoading = false;
         }
     }
 
     private async Task CloseDialog()
     {
-        //await EmployeeVM.LoadEmployees();
         MudDialog.Cancel();
     }
 
-    private async void ShowResponseClose(ResponseModel response)
+    private async Task ShowResponseClose(ResponseModel response)
     {
-        await Task.Delay(500);
+        await Task.Delay(1000);
 
         isLoading = false;
         StateHasChanged();
@@ -205,7 +266,6 @@
             if (response.IsSuccess)
             {
                 Snackbar.Add(response.Message, Severity.Success);
-                //await EmployeeVM.LoadEmployees();
                 MudDialog.Close(DialogResult.Ok(true));
             }
             else
@@ -214,5 +274,31 @@
                 return;
             }
         }
+    }
+
+    private void AddProduct()
+    {
+        if (!string.IsNullOrWhiteSpace(CurrentProduct.ProductId) && CurrentProduct.Quantity > 0)
+        {
+            Products.Add(new ProductEntry
+            {
+                ProductId = CurrentProduct.ProductId.Trim(),
+                Quantity = CurrentProduct.Quantity
+            });
+
+            // Reset input
+            CurrentProduct = new ProductEntry();
+        }
+    }
+
+    private void RemoveProduct(ProductEntry product)
+    {
+        Products.Remove(product);
+    }
+
+    public class ProductEntry
+    {
+        public string ProductId { get; set; }
+        public float Quantity { get; set; }
     }
 }
